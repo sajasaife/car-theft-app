@@ -18,16 +18,15 @@ public class SparkProcessor {
 
         df = cleanDataFrame(df);
 
-        df.show(30);
-
         df.cache();
 
         // call api
         ApiClient apiClient = new ApiClient(spark);
-        Dataset<Row> apiResultDF = apiClient.callApi(df);
+        df = apiClient.callApi(df);
 
         // Task1: get cars per country CSVs
-        Dataset<Row> task1DF = apiResultDF.select("Make/Model", "CountryOfOrigin").distinct().repartition(10); // introduce parallelism by repartitioning after map
+        Dataset<Row> task1DF = df.select("Make/Model", "CountryOfOrigin").distinct().repartition(10); // introduce parallelism by repartitioning after map
+        df.drop("CountryOfOrigin");
         task1DF.cache();
 
         saveResultAsCsv(task1DF, outputsPath + "/task1_cars_per_country");
@@ -35,11 +34,9 @@ public class SparkProcessor {
 
         Map<String, Dataset<Row>> result = new HashMap<>();
         result.put("originalDF", df);
-        result.put("apiDF", apiResultDF);
         result.put("carCountryDF", task1DF);
 
         df.unpersist();
-        apiResultDF.unpersist();
         task1DF.unpersist();
 
         return result;
@@ -85,11 +82,12 @@ public class SparkProcessor {
 
     }
 
-    public void calculations(Dataset<Row> df, Dataset<Row> df2, Dataset<Row> df3){
+    public void calculations(Dataset<Row> df, Dataset<Row> df2){
         // Register the DataFrame as a temporary SQL table
         df.createOrReplaceTempView("cars_thefts");
-        df2.createOrReplaceTempView("cars_thefts_full");
-        df3.createOrReplaceTempView("cars_countries");
+        df2.createOrReplaceTempView("cars_countries");
+
+
 
         // Run the SQL query
         Dataset<Row> result1 = spark.sql(
@@ -122,7 +120,7 @@ public class SparkProcessor {
         Dataset<Row> result3 = spark.sql(
                 "SELECT DISTINCT C.CountryOfOrigin, COUNT(T.`Make/Model`) AS TotalMakes " +
                         "FROM cars_countries C " +
-                        "LEFT JOIN cars_thefts_full T ON C.`Make/Model` = T.`Make/Model` " +
+                        "LEFT JOIN cars_thefts T ON C.`Make/Model` = T.`Make/Model` " +
                         "GROUP BY C.CountryOfOrigin " +
                         "ORDER BY TotalMakes DESC " +
                         "LIMIT 1");

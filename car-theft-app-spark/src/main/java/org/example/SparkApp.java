@@ -7,7 +7,6 @@ import java.util.Map;
 public class SparkApp {
     public static String mainDatasetPath = "src/main/resources/2015_State_Top10Report_wTotalThefts.csv";
     public static String updatedRecordsDatasetPath = "src/main/resources/Sheet1.csv";
-    public static String outputsPath = "src/main/resources/outputs";
 
     public static void main(String[] args) throws Exception {
         // Set up Spark configuration
@@ -24,7 +23,7 @@ public class SparkApp {
         Dataset<Row>  updatedDF = processor.updateData(updatedRecordsDatasetPath, result.get("originalDF"));
 
         // Task 3 - SQL Part
-        processor.calculations(updatedDF, result.get("apiDF"), result.get("carCountryDF"));
+        processor.calculations(updatedDF, result.get("carCountryDF"));
 
         // Stop the Spark session
         spark.stop();
