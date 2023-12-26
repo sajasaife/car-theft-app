@@ -118,7 +118,7 @@ public class SparkProcessor {
 
 
         Dataset<Row> result3 = spark.sql(
-                "SELECT DISTINCT C.CountryOfOrigin, COUNT(T.`Make/Model`) AS TotalMakes " +
+                "SELECT DISTINCT C.CountryOfOrigin, SUM(T.`Thefts`) AS TotalMakes " +
                         "FROM cars_countries C " +
                         "LEFT JOIN cars_thefts T ON C.`Make/Model` = T.`Make/Model` " +
                         "GROUP BY C.CountryOfOrigin " +
